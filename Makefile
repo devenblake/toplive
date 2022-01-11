@@ -1,10 +1,13 @@
+RM=rm -f
+
 generate: data.json
 	./generator.py
 
 clean:
-	rm -rf generation/*
+	$(RM) -r generation/*
 
 git:
+	git add generation/*
 	git add generation/*/*/*
 
 .PHONY: clean git
