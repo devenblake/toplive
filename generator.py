@@ -160,7 +160,7 @@ def main(argc, argv):
 		"index": fileread("index.html.template"),
 		"pages": fileread("XX.html.template")
 	}
-	os.chdir("generation")
+	os.chdir("docs")
 
 	generate_directory_structure(data)
 	generate_index(data, template["index"])
