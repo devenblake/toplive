@@ -11,6 +11,14 @@ def apply_macros(m, t):
 		t = t.replace("!%s!" % key, m[key])
 	return t
 
+def dates(data):
+	retval = []
+	for year in list(data["concerts"]):
+		for month in list(data["concerts"][year]):
+			for day in list(data["concerts"][year][month]):
+				retval.append([year, month, day])
+	return retval
+
 # print an error to stderr and then exit 1
 def error(s):
 	sys.stderr.write("%s: %s\n" % (sys.argv[0], s))
@@ -40,6 +48,7 @@ def filewrite(n, c):
 		error(e)
 	f.write(c)
 	f.close()
+	return
 
 # mkdir -p {$years}/{$months}, you get the idea
 def generate_directory_structure(data):
@@ -57,19 +66,27 @@ def generate_directory_structure(data):
 				except Exception as e:
 					error("Error generating directory structure (os.mkdir): %s" % e)
 		os.chdir("..")
+	return
+
+def generate_index(data, template):
+	content = ""
+
+	content += "<UL>\n"
+	for date in dates(data):
+		content += '<LI><A HREF="/%s/%s/%s.html">%s-%s-%s: %s</A></LI>\n' \
+			% (date[0], date[1], date[2], date[0], date[1], date[2],
+				data["concerts"][date[0]][date[1]][date[2]]["venue"])
+	content += "</UL>\n"
+
+	filewrite("index.html", template.replace("!Content!", content))
+
 
 def generate_pages(data, template):
-	for year in list(data["concerts"]):
-		os.chdir(year)
-		for month in list(data["concerts"][year]):
-			os.chdir(month)
-			for day in list(data["concerts"][year][month]):
-				filewrite(
-					"%s.html" % day,
-					apply_macros(macros(data, [year, month, day]), template)
-				)
-			os.chdir("..")
-		os.chdir("..")
+	for date in dates(data):
+		filewrite(
+			"%s/%s/%s.html" % tuple(date),
+			apply_macros(macros(data, date), template)
+		)
 	return
 
 # generates macro content
@@ -133,12 +150,15 @@ def main(argc, argv):
 	except json.decoder.JSONDecodeError as e:
 		error("Invalid JSON file. (%s)" % e)
 
-	page_template = fileread("template-page.html")
-
+	template = {
+		"index": fileread("index.html.template"),
+		"pages": fileread("XX.html.template")
+	}
 	os.chdir("generation")
 
 	generate_directory_structure(data)
-	generate_pages(data, page_template)
+	generate_index(data, template["index"])
+	generate_pages(data, template["pages"])
 
 	return 0;
 
