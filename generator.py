@@ -7,11 +7,18 @@ import os
 import sys
 
 generator_tag = '<META CONTENT="twentyonepilots.live site generator" NAME="generator" />'
+macro_format = "!%s!"
 
 def apply_macros(m, t):
 	for key in m.keys():
-		t = t.replace("!%s!" % key, m[key])
+		t = t.replace(macro_transform(key, macro_format), m[key])
 	return t
+
+def combine_macros(*args):
+	retval = collections.OrderedDict()
+	for arg in args:
+		retval = collections.OrderedDict({**retval, **arg})
+	return retval
 
 def dates(data):
 	retval = []
@@ -80,18 +87,32 @@ def generate_index(data, template):
 				data["concerts"][date[0]][date[1]][date[2]]["venue"])
 	content += "</UL>\n"
 
-	filewrite("index.html", template.replace("!Generator!", generator_tag).replace("!Content!", content))
+	filewrite(
+		"index.html", apply_macros(
+			combine_macros(
+				macros(data), collections.OrderedDict([("Content", content)])
+			), template
+		)
+	)
 
 
 def generate_pages(data, template):
 	for date in dates(data):
 		filewrite(
 			"%s/%s/%s.html" % tuple(date),
-			apply_macros(macros(data, date), template)
+			apply_macros(
+				combine_macros(
+					macros(data),
+					macros_page(data, date)
+				), template
+			)
 		)
 	return
 
-# generates macro content
+def macros(data):
+	macros = collections.OrderedDict([("Generator", generator_tag)])
+	return macros
+
 # data
 #	the full JSON object
 # selection
@@ -100,14 +121,14 @@ def generate_pages(data, template):
 #		the month of the performance selected (str, len 2)
 #		the day of the performance selected (str, len 2)
 #	]
-def macros(data, selection):
+def macros_page(data, selection):
 	year = selection[0]
 	month = selection[1]
 	day = selection[2]
 	try:
 		concert = data["concerts"][year][month][day]
 	except KeyError as e:
-		error("macros(): KeyError: %s" % e)
+		error("macros_page(): KeyError: %s" % e)
 
 	# trivial date macros to start out
 	macros = collections.OrderedDict([
@@ -117,7 +138,6 @@ def macros(data, selection):
 		("Dp", datetime.date(int(year), int(month), int(day)).strftime("%d %B %Y"))
 	])
 
-	macros["Generator"] = generator_tag
 
 	macros["Venue"] = concert["venue"]
 
@@ -149,6 +169,13 @@ WIDTH="640"
 	macros["Setlist"] = setlist
 
 	return macros
+
+# turn a macro name into the string for which to search to turn into macro
+# content
+# in: "hello world", "!%s!"
+# out: "!hello world!"
+def macro_transform(s, fmt):
+	return fmt % s
 
 def main(argc, argv):
 	try:
