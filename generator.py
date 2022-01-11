@@ -6,6 +6,8 @@ import json
 import os
 import sys
 
+generator_tag = '<META CONTENT="twentyonepilots.live site generator" NAME="generator" />'
+
 def apply_macros(m, t):
 	for key in m.keys():
 		t = t.replace("!%s!" % key, m[key])
@@ -78,7 +80,7 @@ def generate_index(data, template):
 				data["concerts"][date[0]][date[1]][date[2]]["venue"])
 	content += "</UL>\n"
 
-	filewrite("index.html", template.replace("!Content!", content))
+	filewrite("index.html", template.replace("!Generator!", generator_tag).replace("!Content!", content))
 
 
 def generate_pages(data, template):
@@ -114,6 +116,8 @@ def macros(data, selection):
 		("DD", day),
 		("Dp", datetime.date(int(year), int(month), int(day)).strftime("%d %B %Y"))
 	])
+
+	macros["Generator"] = generator_tag
 
 	macros["Venue"] = concert["venue"]
 
