@@ -2,9 +2,9 @@ generate: data.json
 	./generator.py
 
 clean:
-	rm -rf 2012
+	rm -rf generation/*
 
 git:
-	git add */*/*
+	git add generation/*/*/*
 
 .PHONY: clean git

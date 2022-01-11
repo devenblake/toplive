@@ -133,10 +133,12 @@ def main(argc, argv):
 	except json.decoder.JSONDecodeError as e:
 		error("Invalid JSON file. (%s)" % e)
 
-	template = fileread("template-page.html")
+	page_template = fileread("template-page.html")
+
+	os.chdir("generation")
 
 	generate_directory_structure(data)
-	generate_pages(data, template)
+	generate_pages(data, page_template)
 
 	return 0;
 
