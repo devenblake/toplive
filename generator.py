@@ -121,9 +121,11 @@ def macros(data, selection):
 
 	macros["Venue"] = concert["venue"]
 
-	# video embed
-	video = data["concerts"][year][month][day]["video"]
-	if(video["type"] == "iframe"):
+	# embed
+	embed= data["concerts"][year][month][day]["embed"]
+	if embed["type"] == "none":
+		pass
+	elif embed["type"] == "iframe":
 		macros["Embed"] = '''\
 <IFRAME
 ALLOWFULLSCREEN
@@ -133,10 +135,10 @@ MOZALLOWFULLSCREEN="true"
 SRC="%s"
 WEBKITALLOWFULLSCREEN="true"
 WIDTH="640"
-><P><A HREF="%s">iframe</A></P></IFRAME>''' % (video["href"], video["href"])
+><P><A HREF="%s">iframe</A></P></IFRAME>''' % (embed["href"], embed["href"])
 	else:
-		error("What video type is %s? (%s)"
-			% (video["type"], ('data["concerts"]["%s"]["%s"]["%s"]["video"]["type"]'
+		error("What embed type is %s? (%s)"
+			% (embed["type"], ('data["concerts"]["%s"]["%s"]["%s"]["embed"]["type"]'
 				% (year, month, day))))
 
 	# setlist ordered list
