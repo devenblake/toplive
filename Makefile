@@ -6,7 +6,7 @@ generate: data.json
 	./generator.py
 
 clean:
-	$(RM) -r generation/*
+	$(RM) -r docs/*
 
 git:
 	git add docs/*
