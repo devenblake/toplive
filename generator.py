@@ -3,6 +3,7 @@ import argparse
 import collections
 import datetime
 import json
+import os
 import sys
 
 def apply_macros(m, t):
@@ -26,6 +27,50 @@ def fileread(n):
 	r = f.read()
 	f.close()
 	return r
+
+# safely write a file
+# n
+#	file name
+# c
+#	content
+def filewrite(n, c):
+	try:
+		f = open(n, "w")
+	except Exception as e:
+		error(e)
+	f.write(c)
+	f.close()
+
+# mkdir -p {$years}/{$months}, you get the idea
+def generate_directory_structure(data):
+	for year in list(data["concerts"]):
+		if not(os.path.exists(year)):
+			try:
+				os.mkdir(year)
+			except Exception as e:
+				error("Error generating directory structure (os.mkdir): %s" % e)
+		os.chdir(year)
+		for month in list(data["concerts"][year]):
+			if not(os.path.exists(month)):
+				try:
+					os.mkdir(month)
+				except Exception as e:
+					error("Error generating directory structure (os.mkdir): %s" % e)
+		os.chdir("..")
+
+def generate_pages(data, template):
+	for year in list(data["concerts"]):
+		os.chdir(year)
+		for month in list(data["concerts"][year]):
+			os.chdir(month)
+			for day in list(data["concerts"][year][month]):
+				filewrite(
+					"%s.html" % day,
+					apply_macros(macros(data, [year, month, day]), template)
+				)
+			os.chdir("..")
+		os.chdir("..")
+	return
 
 # generates macro content
 # data
@@ -83,13 +128,6 @@ WIDTH="640"
 	return macros
 
 def main(argc, argv):
-	parser = argparse.ArgumentParser(add_help=False)
-	parser.add_argument('year')
-	parser.add_argument('month')
-	parser.add_argument('day')
-	args = vars(parser.parse_args(argv[1:]))
-	year, month, day = args["year"], args["month"], args["day"]
-
 	try:
 		data = json.loads(fileread("data.json"))
 	except json.decoder.JSONDecodeError as e:
@@ -97,9 +135,8 @@ def main(argc, argv):
 
 	template = fileread("template-page.html")
 
-	m = macros(data, [year, month, day])
-	template = apply_macros(m, template)
-	print(end=template)
+	generate_directory_structure(data)
+	generate_pages(data, template)
 
 	return 0;
 
